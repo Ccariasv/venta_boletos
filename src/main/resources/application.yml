@@ -1,0 +1,32 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    url: jdbc:oracle:thin:@//localhost:1521/XE  # ajusta host/servicio
+    username: carias                                 # tu esquema
+    password: 55445400                                  # tu password
+    driver-class-name: oracle.jdbc.OracleDriver
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate                              # respeta tu DDL existente
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.OracleDialect  # Hibernate 6 / Boot 3.x
+        format_sql: true
+  jackson:
+    time-zone: UTC
+    default-property-inclusion: non_null
+
+# Swagger UI en /swagger-ui.html
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+# CORS rápido para desarrollo (ajusta dominios en producción)
+app:
+  cors:
+    allowed-origins: "http://localhost:5173,http://localhost:3000"
