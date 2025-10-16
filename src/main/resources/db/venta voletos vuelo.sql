@@ -1,6 +1,28 @@
 -- ============================================================================
--- Oracle 21c XE | DDL completo
+-- Oracle 21c XE | DDL completo (con fix a índice de vuelos por fecha)
 -- ============================================================================
+
+-- (Opcional) Limpieza rápida para re-ejecutar el script en desarrollo
+-- DROP TABLE equipaje CASCADE CONSTRAINTS;
+-- DROP TABLE checkin CASCADE CONSTRAINTS;
+-- DROP TABLE turnos_tripulacion CASCADE CONSTRAINTS;
+-- DROP TABLE usuarios CASCADE CONSTRAINTS;
+-- DROP TABLE roles_sistema CASCADE CONSTRAINTS;
+-- DROP TABLE pagos CASCADE CONSTRAINTS;
+-- DROP TABLE boletos CASCADE CONSTRAINTS;
+-- DROP TABLE pasajeros CASCADE CONSTRAINTS;
+-- DROP TABLE vuelos CASCADE CONSTRAINTS;
+-- DROP TABLE asientos CASCADE CONSTRAINTS;
+-- DROP TABLE aviones CASCADE CONSTRAINTS;
+-- DROP TABLE rutas CASCADE CONSTRAINTS;
+-- DROP TABLE aeropuertos CASCADE CONSTRAINTS;
+-- DROP TABLE clases_asiento CASCADE CONSTRAINTS;
+-- DROP TABLE cat_rol_tripulacion CASCADE CONSTRAINTS;
+-- DROP TABLE cat_metodo_pago CASCADE CONSTRAINTS;
+-- DROP TABLE cat_estado_boleto CASCADE CONSTRAINTS;
+-- DROP TABLE cat_estado_vuelo CASCADE CONSTRAINTS;
+-- DROP TABLE cat_estado_avion CASCADE CONSTRAINTS;
+-- DROP TABLE empleados CASCADE CONSTRAINTS;
 
 -- =========================
 -- CATÁLOGOS (DOMINIOS)
@@ -89,6 +111,7 @@ CREATE TABLE asientos (
   CONSTRAINT uk_asiento_numero UNIQUE (avion_id, numero_asiento)
 );
 CREATE INDEX ix_asientos_avion ON asientos(avion_id);
+CREATE INDEX ix_asientos_clase ON asientos(clase_id);
 
 CREATE TABLE vuelos (
   id                 NUMBER(10) GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -98,15 +121,23 @@ CREATE TABLE vuelos (
   salida_ts          TIMESTAMP WITH TIME ZONE NOT NULL,
   llegada_ts         TIMESTAMP WITH TIME ZONE NOT NULL,
   estado_id          NUMBER(3) NOT NULL,
+
+  -- Columna virtual determinista para “día UTC” de salida (FIX ORA-01743)
+  salida_fecha_utc   TIMESTAMP 
+    GENERATED ALWAYS AS ( TRUNC(SYS_EXTRACT_UTC(salida_ts)) ) VIRTUAL,
+
   CONSTRAINT fk_vuelo_ruta   FOREIGN KEY (ruta_id)  REFERENCES rutas(id),
   CONSTRAINT fk_vuelo_avion  FOREIGN KEY (avion_id) REFERENCES aviones(id),
   CONSTRAINT fk_vuelo_estado FOREIGN KEY (estado_id) REFERENCES cat_estado_vuelo(id),
   CONSTRAINT ck_vuelo_tiempos CHECK (llegada_ts > salida_ts)
 );
+
+-- Índices y unicidades en vuelos
 CREATE UNIQUE INDEX uk_vuelo_numero_fecha
-  ON vuelos (numero_vuelo, TRUNC(CAST(salida_ts AT TIME ZONE 'UTC' AS DATE)));
+  ON vuelos (numero_vuelo, salida_fecha_utc);  -- ← usa la columna virtual (determinista)
 CREATE INDEX ix_vuelos_ruta  ON vuelos(ruta_id);
 CREATE INDEX ix_vuelos_avion ON vuelos(avion_id);
+CREATE INDEX ix_vuelos_estado ON vuelos(estado_id);
 
 CREATE TABLE pasajeros (
   id                   NUMBER(10) GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -133,6 +164,8 @@ CREATE TABLE boletos (
   CONSTRAINT ck_boleto_precio    CHECK (precio >= 0)
 );
 CREATE UNIQUE INDEX uk_boleto_vuelo_asiento ON boletos (vuelo_id, asiento_id);
+CREATE INDEX ix_boletos_pasajero ON boletos(pasajero_id);
+CREATE INDEX ix_boletos_estado   ON boletos(estado_id);
 
 CREATE TABLE pagos (
   id              NUMBER(12) GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -146,6 +179,7 @@ CREATE TABLE pagos (
   CONSTRAINT ck_pago_monto       CHECK (monto > 0)
 );
 CREATE INDEX ix_pagos_boleto ON pagos(boleto_id);
+CREATE INDEX ix_pagos_metodo ON pagos(metodo_pago_id);
 
 CREATE TABLE empleados (
   id          NUMBER(10) GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -166,7 +200,8 @@ CREATE TABLE turnos_tripulacion (
   CONSTRAINT fk_turno_rol       FOREIGN KEY (rol_id)      REFERENCES cat_rol_tripulacion(id),
   CONSTRAINT uk_turno UNIQUE (empleado_id, vuelo_id, rol_id)
 );
-CREATE INDEX ix_turno_vuelo ON turnos_tripulacion(vuelo_id);
+CREATE INDEX ix_turno_vuelo    ON turnos_tripulacion(vuelo_id);
+CREATE INDEX ix_turno_empleado ON turnos_tripulacion(empleado_id);
 
 CREATE TABLE checkin (
   id              NUMBER(12) GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -209,15 +244,9 @@ CREATE TABLE usuarios (
   CONSTRAINT ck_usuario_activo   CHECK (activo_flag IN ('S','N'))
 );
 
--- Índices opcionales
-CREATE INDEX ix_boletos_pasajero ON boletos(pasajero_id);
-CREATE INDEX ix_vuelos_estado    ON vuelos(estado_id);
-CREATE INDEX ix_boletos_estado   ON boletos(estado_id);
-CREATE INDEX ix_pagos_metodo     ON pagos(metodo_pago_id);
-CREATE INDEX ix_turno_empleado   ON turnos_tripulacion(empleado_id);
-CREATE INDEX ix_asientos_clase   ON asientos(clase_id);
-
--- Trigger: el asiento debe pertenecer al avión del vuelo
+-- =========================
+-- TRIGGER: el asiento debe pertenecer al avión del vuelo
+-- =========================
 CREATE OR REPLACE TRIGGER trg_boleto_asiento_avion
   BEFORE INSERT OR UPDATE OF vuelo_id, asiento_id ON boletos
   FOR EACH ROW
@@ -225,7 +254,7 @@ DECLARE
   v_avion_vuelo   aviones.id%TYPE;
   v_avion_asiento aviones.id%TYPE;
 BEGIN
-  SELECT avion_id INTO v_avion_vuelo  FROM vuelos   WHERE id = :NEW.vuelo_id;
+  SELECT avion_id INTO v_avion_vuelo   FROM vuelos   WHERE id = :NEW.vuelo_id;
   SELECT avion_id INTO v_avion_asiento FROM asientos WHERE id = :NEW.asiento_id;
   IF v_avion_vuelo <> v_avion_asiento THEN
     RAISE_APPLICATION_ERROR(-20001, 'El asiento no pertenece al avión asignado al vuelo.');
@@ -233,11 +262,15 @@ BEGIN
 END;
 /
 
--- Comentarios
+-- =========================
+-- COMENTARIOS
+-- =========================
 COMMENT ON TABLE aeropuertos IS 'Catálogo de aeropuertos (IATA único)';
 COMMENT ON COLUMN vuelos.numero_vuelo IS 'Identificador comercial del vuelo (p. ej., TA123)';
 
--- Seeds mínimos
+-- =========================
+-- SEEDS MÍNIMOS
+-- =========================
 INSERT INTO cat_estado_avion (codigo, descripcion) VALUES ('ACTIVO', 'Disponible para volar');
 INSERT INTO cat_estado_avion (codigo, descripcion) VALUES ('MANTENIMIENTO', 'En mantenimiento');
 INSERT INTO cat_estado_avion (codigo, descripcion) VALUES ('RETIRADO', 'Fuera de servicio');
@@ -268,3 +301,7 @@ INSERT INTO cat_rol_tripulacion (codigo, descripcion) VALUES ('TCP', 'Tripulante
 INSERT INTO roles_sistema (codigo, descripcion) VALUES ('ADMIN', 'Administrador');
 INSERT INTO roles_sistema (codigo, descripcion) VALUES ('CAJERO', 'Caja/ventas');
 INSERT INTO roles_sistema (codigo, descripcion) VALUES ('AGENTE', 'Agente de mostrador');
+
+-- ============================================================================
+-- FIN
+-- ============================================================================
