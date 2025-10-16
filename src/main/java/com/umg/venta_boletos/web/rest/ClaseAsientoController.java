@@ -3,7 +3,7 @@ package com.umg.venta_boletos.web.rest;
 
 import com.umg.venta_boletos.domain.catalogo.ClaseAsiento;
 import com.umg.venta_boletos.repo.ClaseAsientoRepo;
-import com.umg.venta_boletos.web.rest.base.BaseCrudController;
+import com.umg.venta_boletos.web.base.BaseCrudController;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 

@@ -1,4 +1,4 @@
-package com.umg.venta_boletos.web.rest.base;
+package com.umg.venta_boletos.web.base;
 
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;

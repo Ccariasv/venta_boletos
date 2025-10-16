@@ -1,0 +1,12 @@
+package com.umg.venta_boletos.web.rest;
+
+import com.umg.venta_boletos.domain.core.*;
+import com.umg.venta_boletos.repo.*;
+import com.umg.venta_boletos.web.base.BaseCrudController;
+import org.springframework.web.bind.annotation.*;
+
+@RestController @RequestMapping("/api/turnos-tripulacion")
+class TurnoTripulacionController extends BaseCrudController<TurnoTripulacion, Long> {
+    public TurnoTripulacionController(TurnoTripulacionRepo repo){ super(repo); }
+    @Override protected void setId(TurnoTripulacion e, Long id){ e.setId(id); }
+}
