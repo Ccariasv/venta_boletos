@@ -1,22 +1,23 @@
 package com.umg.venta_boletos.web.rest;
 
+import com.umg.venta_boletos.domain.catalogo.CatMetodoPago;
 import com.umg.venta_boletos.repo.CatMetodoPagoRepo;
+import com.umg.venta_boletos.service.catalogo.CatMetodoPagoService;
 import com.umg.venta_boletos.web.dto.*;
 import com.umg.venta_boletos.web.mapper.CatMetodoPagoMapper;
-import com.umg.venta_boletos.domain.catalogo.CatMetodoPago;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 import static com.umg.venta_boletos.web.mapper.MapperSupport.toPageResponse;
-import static com.umg.venta_boletos.web.rest.CrudUtils.notFound;
 
 @RestController
 @RequestMapping("/api/catalogos/metodos-pago")
 @RequiredArgsConstructor
 public class CatMetodoPagoController {
     private final CatMetodoPagoRepo repo;
+    private final CatMetodoPagoService service;
     private final CatMetodoPagoMapper mapper;
 
     @GetMapping
@@ -26,27 +27,26 @@ public class CatMetodoPagoController {
 
     @GetMapping("/{id}")
     public CatMetodoPagoRes get(@PathVariable Integer id){
-        var e = repo.findById(id).orElseThrow(CrudUtils::notFound);
-        return mapper.toRes(e);
+        return mapper.toRes(service.getOr404(id));
     }
 
     @PostMapping @ResponseStatus(HttpStatus.CREATED)
     public CatMetodoPagoRes create(@Valid @RequestBody CatMetodoPagoReq req){
-        CatMetodoPago e = mapper.toEntity(req);
-        return mapper.toRes(repo.save(e));
+        var e = mapper.toEntity(req);
+        return mapper.toRes(service.save(e));
     }
 
     @PutMapping("/{id}")
     public CatMetodoPagoRes update(@PathVariable Integer id, @Valid @RequestBody CatMetodoPagoReq req){
-        if(!repo.existsById(id)) throw notFound();
-        CatMetodoPago e = mapper.toEntity(req);
+        service.getOr404(id);
+        var e = mapper.toEntity(req);
         e.setId(id);
-        return mapper.toRes(repo.save(e));
+        return mapper.toRes(service.save(e));
     }
 
     @DeleteMapping("/{id}") @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable Integer id){
-        if(!repo.existsById(id)) throw notFound();
+        service.getOr404(id);
         repo.deleteById(id);
     }
 }

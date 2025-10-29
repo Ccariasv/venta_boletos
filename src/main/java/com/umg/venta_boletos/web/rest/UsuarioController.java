@@ -1,9 +1,10 @@
 package com.umg.venta_boletos.web.rest;
 
+import com.umg.venta_boletos.domain.seguridad.Usuario;
 import com.umg.venta_boletos.repo.UsuarioRepo;
+import com.umg.venta_boletos.service.seguridad.UsuarioService;
 import com.umg.venta_boletos.web.dto.*;
 import com.umg.venta_boletos.web.mapper.*;
-import com.umg.venta_boletos.domain.seguridad.Usuario;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
 import org.springframework.http.HttpStatus;
@@ -11,13 +12,13 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 
 import static com.umg.venta_boletos.web.mapper.MapperSupport.toPageResponse;
-import static com.umg.venta_boletos.web.rest.CrudUtils.notFound;
 
 @RestController
 @RequestMapping("/api/seguridad/usuarios")
 @RequiredArgsConstructor
 public class UsuarioController {
     private final UsuarioRepo repo;
+    private final UsuarioService service;
     private final UsuarioMapper mapper;
     private final EntityRefResolver ref;
 
@@ -28,27 +29,26 @@ public class UsuarioController {
 
     @GetMapping("/{id}")
     public UsuarioRes get(@PathVariable Long id){
-        var e = repo.findById(id).orElseThrow(CrudUtils::notFound);
-        return mapper.toRes(e);
+        return mapper.toRes(service.getOr404(id));
     }
 
     @PostMapping @ResponseStatus(HttpStatus.CREATED)
     public UsuarioRes create(@Valid @RequestBody UsuarioReq req){
-        Usuario e = mapper.toEntity(req, ref);
-        return mapper.toRes(repo.save(e));
+        Usuario u = mapper.toEntity(req, ref);
+        return mapper.toRes(service.save(u)); // cuando activemos JWT, encripta password aquí
     }
 
     @PutMapping("/{id}")
     public UsuarioRes update(@PathVariable Long id, @Valid @RequestBody UsuarioReq req){
-        if(!repo.existsById(id)) throw notFound();
-        Usuario e = mapper.toEntity(req, ref);
-        e.setId(id);
-        return mapper.toRes(repo.save(e));
+        service.getOr404(id);
+        Usuario u = mapper.toEntity(req, ref);
+        u.setId(id);
+        return mapper.toRes(service.save(u));
     }
 
     @DeleteMapping("/{id}") @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable Long id){
-        if(!repo.existsById(id)) throw notFound();
+        service.getOr404(id);
         repo.deleteById(id);
     }
 }

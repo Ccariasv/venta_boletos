@@ -1,9 +1,10 @@
 package com.umg.venta_boletos.web.rest;
 
+import com.umg.venta_boletos.domain.core.Pago;
 import com.umg.venta_boletos.repo.PagoRepo;
+import com.umg.venta_boletos.service.core.PagoService;
 import com.umg.venta_boletos.web.dto.*;
 import com.umg.venta_boletos.web.mapper.*;
-import com.umg.venta_boletos.domain.core.Pago;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
 import org.springframework.http.HttpStatus;
@@ -11,13 +12,13 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 
 import static com.umg.venta_boletos.web.mapper.MapperSupport.toPageResponse;
-import static com.umg.venta_boletos.web.rest.CrudUtils.notFound;
 
 @RestController
 @RequestMapping("/api/pagos")
 @RequiredArgsConstructor
 public class PagoController {
     private final PagoRepo repo;
+    private final PagoService service;
     private final PagoMapper mapper;
     private final EntityRefResolver ref;
 
@@ -28,27 +29,26 @@ public class PagoController {
 
     @GetMapping("/{id}")
     public PagoRes get(@PathVariable Long id){
-        var e = repo.findById(id).orElseThrow(CrudUtils::notFound);
-        return mapper.toRes(e);
+        return mapper.toRes(service.getOr404(id));
     }
 
     @PostMapping @ResponseStatus(HttpStatus.CREATED)
     public PagoRes create(@Valid @RequestBody PagoReq req){
-        Pago e = mapper.toEntity(req, ref);
-        return mapper.toRes(repo.save(e));
+        Pago p = mapper.toEntity(req, ref);
+        return mapper.toRes(service.registrar(p));
     }
 
     @PutMapping("/{id}")
     public PagoRes update(@PathVariable Long id, @Valid @RequestBody PagoReq req){
-        if(!repo.existsById(id)) throw notFound();
-        Pago e = mapper.toEntity(req, ref);
-        e.setId(id);
-        return mapper.toRes(repo.save(e));
+        // Update directo (normalmente los pagos no se editan; si lo deseas, monta una regla en service)
+        Pago p = mapper.toEntity(req, ref);
+        p.setId(id);
+        return mapper.toRes(repo.save(p));
     }
 
     @DeleteMapping("/{id}") @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable Long id){
-        if(!repo.existsById(id)) throw notFound();
+        // Si deseas controlar reglas de borrado, crea método en service. Aquí simple:
         repo.deleteById(id);
     }
 }
