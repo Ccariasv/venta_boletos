@@ -1,8 +1,6 @@
 package com.umg.venta_boletos.web.dto;
 
-
-public record RolSistemaRes(
-        Integer id,
+public record CatSimpleReq(
         String codigo,
         String descripcion
 ) {}

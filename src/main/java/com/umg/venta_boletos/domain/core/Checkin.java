@@ -23,6 +23,6 @@ public class Checkin {
     @Column(name="EQUIPAJE_FLAG", nullable=false, length=1)
     private String equipajeFlag = "N";  // 'S' o 'N'
 
-    @Column(name="PESO_TOTAL_KG")
+    @Column(name="PESO_TOTAL_KG", nullable = false)
     private Double pesoTotalKg = 0.0;
 }

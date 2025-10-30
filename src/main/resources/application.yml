@@ -17,6 +17,8 @@ spring:
       connection-timeout: 30000
       validation-timeout: 5000
       connection-test-query: "SELECT 1 FROM DUAL"
+  profiles:
+    active: dev
   jpa:
     open-in-view: false
     hibernate:
@@ -30,6 +32,7 @@ spring:
   jackson:
     time-zone: UTC
     default-property-inclusion: non_null
+
 
 # --- Seguridad / JWT ---
 security:

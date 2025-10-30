@@ -5,17 +5,22 @@ import com.umg.venta_boletos.web.dto.CheckinReq;
 import com.umg.venta_boletos.web.dto.CheckinRes;
 import org.mapstruct.*;
 
-@Mapper(componentModel = "spring", uses = EntityRefResolver.class)
+@Mapper(componentModel = "spring",
+        unmappedTargetPolicy = ReportingPolicy.ERROR,
+        injectionStrategy = InjectionStrategy.CONSTRUCTOR)
 public interface CheckinMapper {
 
-    @Mappings({
-            @Mapping(target="boleto", expression="java(ref.refBoleto(req.boletoId()))"),
-            @Mapping(target="fechaCheckin", expression="java(req.fechaCheckin()==null?java.time.LocalDate.now():req.fechaCheckin())")
-    })
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "fechaCheckin", ignore = true) // SYSDATE en DB
+    @Mapping(target = "boleto", expression = "java(ref.refBoleto(req.boletoId()))")
     Checkin toEntity(CheckinReq req, @Context EntityRefResolver ref);
 
-    @Mappings({
-            @Mapping(target="boletoId", source="boleto.id")
-    })
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "fechaCheckin", ignore = true) // <-- faltaba, por eso el error
+    @Mapping(target = "boleto", expression = "java(req.boletoId()!=null ? ref.refBoleto(req.boletoId()) : entity.getBoleto())")
+    void update(@MappingTarget Checkin entity, CheckinReq req, @Context EntityRefResolver ref);
+
+    @Mapping(target = "boletoId", source = "boleto.id")
     CheckinRes toRes(Checkin e);
 }

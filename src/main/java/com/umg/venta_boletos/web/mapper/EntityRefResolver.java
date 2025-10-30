@@ -43,4 +43,24 @@ public class EntityRefResolver {
     public Empleado refEmpleado(Long id){ return id==null?null:empleadoRepo.findById(id).orElseThrow(); }
     public Checkin refCheckin(Long id){ return id==null?null:checkinRepo.findById(id).orElseThrow(); }
     public RolSistema refRolSistema(Integer id){ return id==null?null:rolSistemaRepo.findById(id).orElseThrow(); }
+
+    public Aeropuerto aeropuerto(Long id){ return refAeropuerto(id); }
+    public Ruta ruta(Long id){ return refRuta(id); }
+    public Avion avion(Long id){ return refAvion(id); }
+    public Asiento asiento(Long id){ return refAsiento(id); }
+    public ClaseAsiento claseAsiento(Long id){ return refClaseAsiento(id); }
+
+    public CatEstadoAvion catEstadoAvion(Integer id){ return refCatEstadoAvion(id); }
+    public CatEstadoVuelo catEstadoVuelo(Integer id){ return refCatEstadoVuelo(id); }
+    public CatEstadoBoleto catEstadoBoleto(Integer id){ return refCatEstadoBoleto(id); }
+    public CatMetodoPago catMetodoPago(Integer id){ return refCatMetodoPago(id); }
+    public CatRolTripulacion catRolTrip(Integer id){ return refCatRolTrip(id); }
+
+    public Vuelo vuelo(Long id){ return refVuelo(id); }
+    public Pasajero pasajero(Long id){ return refPasajero(id); }
+    public Boleto boleto(Long id){ return refBoleto(id); }
+    public Empleado empleado(Long id){ return refEmpleado(id); }
+    public Checkin checkin(Long id){ return refCheckin(id); }
+    public RolSistema rolSistema(Integer id){ return refRolSistema(id); }
+
 }
