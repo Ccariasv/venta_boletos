@@ -8,3 +8,5 @@ public record AeropuertoReq(
         @Size(max=100) String pais,
         @NotBlank @Size(min=3, max=3) String codigoIata
 ) {}
+
+//modifie
