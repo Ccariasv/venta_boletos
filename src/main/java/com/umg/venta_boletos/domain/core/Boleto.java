@@ -28,7 +28,7 @@ public class Boleto {
     @ManyToOne(optional=false) @JoinColumn(name="ASIENTO_ID")
     private Asiento asiento;
 
-    @Column(name="PRECIO", nullable=false, precision=10, scale=2)
+    @Column(name="PRECIO", nullable=false)
     private BigDecimal precio;
 
     @Column(name="FECHA_EMISION", nullable=false)

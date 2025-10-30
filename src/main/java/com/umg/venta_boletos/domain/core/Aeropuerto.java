@@ -1,6 +1,7 @@
 package com.umg.venta_boletos.domain.core;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Pattern;
 import lombok.*;
 
 @Entity
@@ -20,6 +21,7 @@ public class Aeropuerto {
     @Column(name="PAIS", length=100)
     private String pais;
 
-    @Column(name="CODIGO_IATA", nullable=false, length=3)
+    @Column(name="CODIGO_IATA", nullable=false, length=3, unique = true)
+    @Pattern(regexp = "^[A-Z]{3}$", message = "El código IATA debe ser 3 letras mayúsculas")
     private String codigoIata;
 }

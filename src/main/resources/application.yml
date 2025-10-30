@@ -1,32 +1,61 @@
 server:
   port: 8080
+  compression:
+    enabled: true
 
 spring:
   datasource:
-    url: jdbc:oracle:thin:@//localhost:1521/XE  # ajusta host/servicio
-    username: carias                                 # tu esquema
-    password: 55445400                                  # tu password
+    url: jdbc:oracle:thin:@//localhost:1521/XE       # Ajusta host/servicio si no es XE
+    username: carias                                  # <-- cámbialo por env en prod
+    password: 55445400                                # <-- cámbialo por env en prod
     driver-class-name: oracle.jdbc.OracleDriver
+    hikari:
+      pool-name: HikariPool-Oracle
+      maximum-pool-size: 10
+      minimum-idle: 2
+      idle-timeout: 60000
+      connection-timeout: 30000
+      validation-timeout: 5000
+      connection-test-query: "SELECT 1 FROM DUAL"
+  profiles:
+    active: dev
   jpa:
     open-in-view: false
     hibernate:
-      ddl-auto: validate                              # respeta tu DDL existente
+      ddl-auto: validate
     properties:
       hibernate:
         dialect: org.hibernate.dialect.OracleDialect  # Hibernate 6 / Boot 3.x
         format_sql: true
+        jdbc:
+          time_zone: UTC
   jackson:
     time-zone: UTC
     default-property-inclusion: non_null
 
-# Swagger UI en /swagger-ui.html
+
+# --- Seguridad / JWT ---
+security:
+  jwt:
+    secret: "CursoBasededatosIingEnsistemasdelainformacion"
+    expiration-minutes: 60            # Access token (1h)
+    refresh-expiration-days: 7        # Refresh token (7d)
+
+# --- Swagger UI ---
 springdoc:
   api-docs:
     path: /v3/api-docs
   swagger-ui:
     path: /swagger-ui.html
 
-# CORS rápido para desarrollo (ajusta dominios en producción)
+# --- CORS para desarrollo (ajusta dominios en prod) ---
 app:
   cors:
-    allowed-origins: "http://localhost:5173,http://localhost:3000"
+    allowed-origins: "*"              # p.ej. "http://localhost:3000"
+
+# --- Logging útil en desarrollo ---
+logging:
+  level:
+    org.hibernate.SQL: debug
+    org.hibernate.orm.jdbc.bind: trace
+    org.springframework.security: info

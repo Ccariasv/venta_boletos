@@ -24,7 +24,7 @@ public class Pago {
     @ManyToOne(optional=false) @JoinColumn(name="METODO_PAGO_ID")
     private CatMetodoPago metodo;
 
-    @Column(name="MONTO", nullable=false, precision=10, scale=2)
+    @Column(name="MONTO", nullable=false)
     private BigDecimal monto;
 
     @Column(name="FECHA_PAGO", nullable=false)
