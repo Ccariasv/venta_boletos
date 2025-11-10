@@ -136,7 +136,8 @@
         </dependency>
 	</dependencies>
 
-	<build>
+
+    <build>
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -156,6 +157,13 @@
                             <version>${mapstruct.version}</version>
                         </path>
 					</annotationProcessorPaths>
+
+                    <compilerArgs>
+                        -Amapstruct.suppressGeneratorTimestamp=true
+                        -Amapstruct.suppressGeneratorVersionInfoComment=true
+                        -Amapstruct.unmappedTargetPolicy=WARN
+                    </compilerArgs>
+
 				</configuration>
 			</plugin>
 			<plugin>
